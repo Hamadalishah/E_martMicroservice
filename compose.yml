@@ -12,17 +12,8 @@ services:
     volumes:
       - ./User_microservice/user_service:/code  
     depends_on:
-      - dapr_sidecar_user
       - postgres_db
       - broker
-
-  dapr_sidecar_user:
-    image: daprio/dapr
-    command: ["dapr", "run", "--app-id", "user_service", "--dapr-http-port","3500" , "--app-port", "8000", "--", "python", "main.py"]
-    networks:
-      - my_network
-    volumes:
-      - ./User_microservice/user_service:/code  
 
   product_service:
     build:
@@ -35,17 +26,8 @@ services:
     volumes:
       - ./Product_Service/product_service:/code 
     depends_on:
-      - dapr_sidecar_product
       - postgres_db
       - broker
-
-  dapr_sidecar_product:
-    image: daprio/dapr
-    command: ["dapr", "run", "--app-id", "product_service", "--dapr-http-port", "3501", "--app-port", "8000", "--", "python", "main.py"]
-    networks:
-      - my_network
-    volumes:
-      - ./Product_Service/product_service:/code  
 
   postgres_db:
     image: postgres:latest  
