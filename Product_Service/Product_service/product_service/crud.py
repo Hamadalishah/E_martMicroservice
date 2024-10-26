@@ -4,16 +4,24 @@ from sqlmodel import Session,select
 from fastapi import Depends,HTTPException,status
 from .db import get_session
 from sqlalchemy.exc import SQLAlchemyError
+from .product_pb2 import Products  # type: ignore
+from .kafka import kafka_producer
+from aiokafka import AIOKafkaProducer # type: ignore
 
 
 
 
 
-
-
-async def add_product(data:Annotated[ProductAdd,Depends()],session:Annotated[Session,Depends(get_session)]):
+async def add_product(data:Annotated[ProductAdd,Depends()],
+                      session:Annotated[Session,Depends(get_session)],
+                      producer:Annotated[AIOKafkaProducer,Depends(kafka_producer)]):
     new_product = Product(product_name=data.product_name,product_price=data.product_price,product_category=data.product_category,
                           product_quantity=data.product_quantity)
+    product_data = Products(product_name=data.product_name,product_price=data.product_price,product_category=data.product_category,
+                          product_quantity=data.product_quantity)
+    serailized = product_data.SerializeToString()
+    await producer.send('product_topic',serailized)
+    
     try:
         session.add(new_product)
         session.commit()

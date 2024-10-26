@@ -4,12 +4,15 @@ from .scehma import UpdateProductImage
 from .crudimage import add_product_image,get_image,get_single_image_by_id,update_image,delete_image
 from typing import Annotated
 from sqlmodel import Session
+from .kafka import kafka_producer
+from aiokafka import AIOKafkaProducer # type: ignore
 router2 = APIRouter()
 
 
 @router2.post('/image/add/{id}')
-async def image_add(id:int,data:UpdateProductImage,session:Annotated[Session,Depends(get_session)]):
-    images= await add_product_image(id=id,data=data,session=session)
+async def image_add(id:int,data:UpdateProductImage,session:Annotated[Session,Depends(get_session)],
+                   producer:Annotated[AIOKafkaProducer,Depends(kafka_producer)] ):
+    images= await add_product_image(id=id,data=data,session=session,producer=producer)
     return {
         f"image added succesfully{images}"
     }

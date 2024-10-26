@@ -4,12 +4,16 @@ from .scehma import ProductAdd
 from .crud import add_product,get_products,get_product_by_id,update_product,delete_product
 from typing import Annotated
 from sqlmodel import Session
+from aiokafka import AIOKafkaProducer # type: ignore
+from .kafka import kafka_producer
 router = APIRouter()
 
 
 @router.post('/product/add')
-async def product_add(product:Annotated[ProductAdd,Depends()],session:Annotated[Session,Depends(get_session)]):
-    products= await add_product(data=product,session=session)
+async def product_add(product:Annotated[ProductAdd,Depends()],
+                      session:Annotated[Session,Depends(get_session)],
+                      producer:Annotated[AIOKafkaProducer,Depends(kafka_producer)]):
+    products= await add_product(data=product,session=session,producer=producer)
     return products
 
 @router.get('/product/get')

@@ -3,6 +3,8 @@ from contextlib import asynccontextmanager
 from .db import create_table
 from .image_routes import router2
 from .rout import router
+from .kafka import kafka_consumer
+import asyncio
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -10,6 +12,8 @@ async def lifespan(app: FastAPI):
     print("table creating....")
     create_table()
     print("creating table succesfully")
+    task = asyncio.create_task(kafka_consumer('product_topic','broker:19092'))
+    task2 = asyncio.create_task(kafka_consumer("product_image",'broker:19092'))
     yield
     
     
@@ -30,33 +34,6 @@ app.include_router(router=router2)
 
 
 
-
-
-
-
-
-
-
-
-
-
-# @app.post('/product/')
-# async def create_product(product:ProductAdd,session:Annotated[Session,Depends(get_session)]):
-#     product_data = Product(product_name=product.product_name,product_category=product.product_category,
-#                            product_price=product.product_price,product_quantity=product.product_quantity)
-#     session.add(product_data)
-#     session.commit()
-#     session.refresh(product_data)
-
-#     return {"message": "product created successfully"}
-
-# @app.get('/product/')
-# async def get_product(session:Annotated[Session,Depends(get_session)]):
- 
-#     products = session.query(Product).all()
-#     if not products:
-#         raise HTTPException(status_code=404, detail="No products found")
-#     return products
     
 
 

@@ -4,13 +4,20 @@ from sqlmodel import Session,select
 from fastapi import Depends,HTTPException,status
 from .db import get_session
 from sqlalchemy.exc import SQLAlchemyError
+from .product_pb2 import ProductImages  # type: ignore
+from aiokafka import AIOKafkaProducer # type: ignore
+from .kafka import kafka_producer
 
 
-async def add_product_image(id:int, data:UpdateProductImage,session:Annotated[Session,Depends(get_session)]):
+async def add_product_image(id:int, data:UpdateProductImage,session:Annotated[Session,Depends(get_session)],
+                           producer:Annotated[AIOKafkaProducer,Depends(kafka_producer)] ):
     
     try:
         product = session.exec(select(Product).where(Product.product_id == id)).one()
         new_image = ProductImage(image_url=data.image_url,image_name=data.image_name,product_id=product.product_id)
+        producer_data = ProductImages(product_id=product.product_id,image_url=data.image_url,image_name=data.image_name)
+        serialized = producer_data.SerializeToString()
+        await producer.send("product_image",serialized)
         session.add(new_image)
         session.commit()
         session.refresh(new_image)
